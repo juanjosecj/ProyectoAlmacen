@@ -3,14 +3,14 @@ import pool from "../db.js";
 
 const router = express.Router();
 
-// POST: Crear factura basada en una solicitud
+// 📌 POST: Crear factura basada en una solicitud
 router.post("/:solicitud_id", async (req, res) => {
   const { solicitud_id } = req.params;
 
   try {
-    // 1. Obtener la solicitud y cliente asociado
+    // 1. Obtener la solicitud y usuario asociado
     const [solicitudes] = await pool.query(
-      `SELECT s.id, s.cliente_id, s.total, s.metodo_pago, f.id AS factura_id
+      `SELECT s.id, s.user_id, s.total, s.metodo_pago, f.id AS factura_id
        FROM solicitudes s
        LEFT JOIN facturas f ON f.solicitud_id = s.id
        WHERE s.id = ?`,
@@ -29,8 +29,8 @@ router.post("/:solicitud_id", async (req, res) => {
 
     // 2. Insertar nueva factura
     const [result] = await pool.query(
-      "INSERT INTO facturas (solicitud_id, cliente_id, total, metodo_pago) VALUES (?, ?, ?, ?)",
-      [solicitud.id, solicitud.cliente_id, solicitud.total, solicitud.metodo_pago]
+      "INSERT INTO facturas (solicitud_id, user_id, total, metodo_pago) VALUES (?, ?, ?, ?)",
+      [solicitud.id, solicitud.user_id, solicitud.total, solicitud.metodo_pago]
     );
 
     res.status(201).json({
@@ -38,7 +38,7 @@ router.post("/:solicitud_id", async (req, res) => {
       factura: {
         id: result.insertId,
         solicitud_id: solicitud.id,
-        cliente_id: solicitud.cliente_id,
+        user_id: solicitud.user_id,
         total: solicitud.total,
         metodo_pago: solicitud.metodo_pago
       }
@@ -49,17 +49,17 @@ router.post("/:solicitud_id", async (req, res) => {
   }
 });
 
-// GET: Obtener factura por ID
+// 📌 GET: Obtener factura por ID
 router.get("/:id", async (req, res) => {
   const { id } = req.params;
 
   try {
     const [facturas] = await pool.query(
       `SELECT f.id, f.fecha, f.total, f.metodo_pago,
-              s.id AS solicitud_id, c.nombre AS cliente_nombre
+              s.id AS solicitud_id, u.nombre AS user_nombre
        FROM facturas f
        JOIN solicitudes s ON f.solicitud_id = s.id
-       JOIN clientes c ON f.cliente_id = c.id
+       JOIN users u ON f.user_id = u.id
        WHERE f.id = ?`,
       [id]
     );

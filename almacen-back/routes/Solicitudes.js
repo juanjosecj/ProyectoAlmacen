@@ -5,10 +5,11 @@ const router = express.Router();
 
 // 📌 POST: Crear solicitud con varios ítems
 router.post("/", async (req, res) => {
-  const { cliente_id, comentario, items, metodo_pago } = req.body;
+  console.log("Body recibido:", req.body); // 👈 prueba
+  const { user_id, comentario, items, metodo_pago } = req.body;
 
-  if (!cliente_id || !Array.isArray(items) || items.length === 0) {
-    return res.status(400).json({ error: "cliente_id e items son requeridos" });
+  if (!user_id || !Array.isArray(items) || items.length === 0) {
+    return res.status(400).json({ error: "user_id e items son requeridos" });
   }
 
   if (!["efectivo", "tarjeta", "transferencia"].includes(metodo_pago)) {
@@ -23,8 +24,8 @@ router.post("/", async (req, res) => {
 
     // 1. Insertar solicitud inicial con estado "pendiente"
     const [solicitudResult] = await connection.query(
-      "INSERT INTO solicitudes (cliente_id, comentario, metodo_pago, estado) VALUES (?, ?, ?, 'pendiente')",
-      [cliente_id, comentario || null, metodo_pago]
+      "INSERT INTO solicitudes (user_id, comentario, metodo_pago, estado) VALUES (?, ?, ?, 'pendiente')",
+      [user_id, comentario || null, metodo_pago]
     );
 
     const solicitud_id = solicitudResult.insertId;
@@ -92,10 +93,10 @@ router.post("/", async (req, res) => {
 router.get("/", async (req, res) => {
   try {
     const [solicitudes] = await pool.query(`
-      SELECT s.id, s.cliente_id, s.comentario, s.metodo_pago, s.total, s.estado, s.fecha_creacion,
-             c.nombre AS cliente_nombre
+      SELECT s.id, s.user_id, s.comentario, s.metodo_pago, s.total, s.estado, s.fecha_creacion,
+             u.nombre AS user_nombre
       FROM solicitudes s
-      JOIN clientes c ON s.cliente_id = c.id
+      JOIN users u ON s.user_id = u.id
       ORDER BY s.fecha_creacion DESC
     `);
 
