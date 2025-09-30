@@ -10,6 +10,7 @@ import Admin from "./routes/Admin.js";
 import Solicitudes from "./routes/Solicitudes.js";
 import Facturas from "./routes/Facturas.js";
 import authRoutes from "./routes/authRoutes.js";
+import Pedidos from "./routes/Pedidos.js";
 import { authMiddleware } from "./middlewares/authMiddleware.js";
 import { authorizeRoles } from "./middlewares/roleMiddleware.js";
 
@@ -58,6 +59,7 @@ app.use("/api/login", Cliente);
 app.use("/api/administradores", Admin);
 app.use("/api/solicitudes", Solicitudes);
 app.use("/api/facturas", Facturas);
+app.use("/api/pedidos", Pedidos);
 
 /* ----------------- INICIAR SERVIDOR ----------------- */
 app.listen(port, () => {
