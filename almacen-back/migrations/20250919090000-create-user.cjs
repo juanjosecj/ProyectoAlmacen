@@ -19,6 +19,14 @@ module.exports = {
         allowNull: false,
         unique: true, // 👈 correo único
       },
+      direccion: {
+        type: Sequelize.STRING,
+        allowNull: true,
+      },
+      telefono: {
+        type: Sequelize.STRING,
+        allowNull: true,
+      },
       password: {
         type: Sequelize.STRING,
         allowNull: false,
