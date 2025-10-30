@@ -5,5 +5,6 @@ export function generarToken(payload) {
 }
 
 export function verificarToken(token) {
-  return jwt.verify(token, process.env.SECRET_KEY);
+  // Usar la misma clave JWT_SECRET para firmar y verificar
+  return jwt.verify(token, process.env.JWT_SECRET);
 }

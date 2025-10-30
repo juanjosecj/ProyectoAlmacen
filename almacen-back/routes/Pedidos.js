@@ -1,10 +1,12 @@
 import express from "express";
 import pool from "../db.js"; 
+import { authMiddleware } from "../middlewares/authMiddleware.js";
+import { authorizeRoles } from "../middlewares/roleMiddleware.js";
 
 const router = express.Router();
 
 /* ---------------- POST CREAR PEDIDO ---------------- */
-router.post("/", async (req, res) => {
+router.post("/", authMiddleware, authorizeRoles("cliente"), async (req, res) => {
   const { userId, productos } = req.body;
 
   try {
@@ -28,10 +30,15 @@ router.post("/", async (req, res) => {
 });
 
 /* ---------------- GET PEDIDOS DE UN CLIENTE ---------------- */
-router.get("/cliente/:userId", async (req, res) => {
+router.get("/cliente/:userId", authMiddleware, async (req, res) => {
   const { userId } = req.params;
 
   try {
+    // permitir acceso al propio cliente o a admin
+    if (req.user.role !== "admin" && String(req.user.id) !== String(userId)) {
+      return res.status(403).json({ error: "No tienes permisos para ver estos pedidos" });
+    }
+
     const [rows] = await pool.query("SELECT * FROM pedidos WHERE userId = ?", [userId]);
     res.json(rows);
   } catch (error) {
@@ -41,7 +48,7 @@ router.get("/cliente/:userId", async (req, res) => {
 });
 
 /* ---------------- GET TODOS LOS PEDIDOS (ADMIN) ---------------- */
-router.get("/", async (req, res) => {
+router.get("/", authMiddleware, authorizeRoles("admin"), async (req, res) => {
   try {
     const [rows] = await pool.query("SELECT * FROM pedidos");
     res.json(rows);
@@ -52,7 +59,7 @@ router.get("/", async (req, res) => {
 });
 
 /* ---------------- PUT ACTUALIZAR ESTADO ---------------- */
-router.put("/:id", async (req, res) => {
+router.put("/:id", authMiddleware, authorizeRoles("admin"), async (req, res) => {
   const { id } = req.params;
   const { estado } = req.body;
 

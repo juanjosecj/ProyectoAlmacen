@@ -2,6 +2,7 @@ import express from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { createUser, findUserByEmail } from "../models/user.js";
+import pool from "../db.js";
 
 const router = express.Router();
 
@@ -54,8 +55,22 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ error: "Correo y contraseña requeridos" });
     }
 
-    // Buscar usuario
-    const user = await findUserByEmail(email);
+    // Buscar usuario con su rol (consulta directa)
+    const [[user]] = await pool.execute(
+      "SELECT * FROM users WHERE email = ?",
+      [email]
+    );
+
+    // Si existe el usuario, obtener su rol
+    if (user) {
+      const [[role]] = await pool.execute(
+        "SELECT name FROM roles WHERE id = ?",
+        [user.roleId]
+      );
+      const roleName = role ? role.name : 'cliente';
+      user.role = roleName;
+    }
+    
     if (!user) {
       return res.status(400).json({ error: "Usuario no encontrado" });
     }
@@ -66,9 +81,13 @@ router.post("/login", async (req, res) => {
       return res.status(400).json({ error: "Contraseña incorrecta" });
     }
 
-    // Crear token JWT
+    // Crear token JWT con role name (no roleId)
     const token = jwt.sign(
-      { id: user.id, roleId: user.roleId, email: user.email },
+      { 
+        id: user.id, 
+        role: user.role, // usar role name guardado en el objeto user
+        email: user.email 
+      },
       process.env.JWT_SECRET,
       { expiresIn: "1h" }
     );
@@ -80,7 +99,7 @@ router.post("/login", async (req, res) => {
         id: user.id,
         nombre: user.nombre,
         email: user.email,
-        roleId: user.roleId,
+        role: user.role || 'cliente', // enviar role name al cliente también
       },
     });
   } catch (error) {
